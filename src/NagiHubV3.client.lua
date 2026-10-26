@@ -1,29 +1,30 @@
 -- NagiHub V3 | Team Zyvora
--- Roblox Studio LocalScript
+-- Compact floating UI for Roblox Studio
 -- Target: Feed Your Pet (PlaceId 131783066284968)
 -- Place in StarterPlayer > StarterPlayerScripts
--- For experiences you own or are authorized to test.
+-- Automation toggles are UI hooks only; connect them to your own experience logic.
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local Stats = game:GetService("Stats")
 
 local player = Players.LocalPlayer
-local pg = player:WaitForChild("PlayerGui")
+local playerGui = player:WaitForChild("PlayerGui")
 
-local TARGET_PLACE_ID = 131783066284968
-local TARGET_NAME = "Feed Your Pet"
-
-local old = pg:FindFirstChild("NagiHubV3")
+local old = playerGui:FindFirstChild("NagiHubV3")
 if old then old:Destroy() end
 
 local C = {
-    bg = Color3.fromRGB(7,9,15), panel = Color3.fromRGB(12,16,25), card = Color3.fromRGB(18,23,35),
-    card2 = Color3.fromRGB(27,34,52), text = Color3.fromRGB(240,243,255), muted = Color3.fromRGB(137,149,176),
-    accent = Color3.fromRGB(105,135,255), accent2 = Color3.fromRGB(160,105,255), good = Color3.fromRGB(85,220,155),
-    warn = Color3.fromRGB(255,190,85), bad = Color3.fromRGB(255,95,115)
+    bg = Color3.fromRGB(8, 10, 16),
+    panel = Color3.fromRGB(14, 17, 26),
+    card = Color3.fromRGB(21, 25, 37),
+    hover = Color3.fromRGB(30, 36, 53),
+    text = Color3.fromRGB(242, 245, 255),
+    muted = Color3.fromRGB(145, 154, 178),
+    accent = Color3.fromRGB(90, 160, 255),
+    good = Color3.fromRGB(75, 220, 145),
+    off = Color3.fromRGB(75, 82, 100),
 }
 
 local gui = Instance.new("ScreenGui")
@@ -31,174 +32,322 @@ gui.Name = "NagiHubV3"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = pg
+gui.Parent = playerGui
 
-local function corner(x,r) local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,r); c.Parent=x end
-local function stroke(x,t) local s=Instance.new("UIStroke"); s.Color=C.accent; s.Transparency=t or .72; s.Thickness=1; s.Parent=x end
-local function tween(x,p,d) TweenService:Create(x,TweenInfo.new(d or .18,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),p):Play() end
-local function label(p,text,size,color)
-    local x=Instance.new("TextLabel"); x.BackgroundTransparency=1; x.Text=text; x.TextSize=size or 14; x.TextColor3=color or C.text; x.Font=Enum.Font.Gotham; x.TextXAlignment=Enum.TextXAlignment.Left; x.Parent=p; return x
-end
-local function button(p,text,cb,h)
-    local b=Instance.new("TextButton"); b.Size=UDim2.new(1,0,0,h or 42); b.BackgroundColor3=C.card; b.Text=text; b.TextColor3=C.text; b.TextSize=13; b.Font=Enum.Font.GothamMedium; b.TextXAlignment=Enum.TextXAlignment.Left; b.AutoButtonColor=false; b.Parent=p; corner(b,10); stroke(b,.84)
-    b.MouseEnter:Connect(function() tween(b,{BackgroundColor3=C.card2}) end)
-    b.MouseLeave:Connect(function() tween(b,{BackgroundColor3=C.card}) end)
-    b.MouseButton1Click:Connect(cb)
-    return b
-end
-local function notify(text, color)
-    local n=Instance.new("TextLabel"); n.AnchorPoint=Vector2.new(.5,0); n.Position=UDim2.new(.5,0,0,-55); n.Size=UDim2.fromOffset(360,42); n.BackgroundColor3=C.panel; n.Text=text; n.TextColor3=color or C.text; n.TextSize=13; n.Font=Enum.Font.GothamMedium; n.Parent=gui; corner(n,10); stroke(n,.42); tween(n,{Position=UDim2.new(.5,0,0,18)},.22); task.delay(1.8,function() tween(n,{Position=UDim2.new(.5,0,0,-55)},.2); task.wait(.22); if n.Parent then n:Destroy() end end)
+local function round(o, r)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, r or 10)
+    c.Parent = o
 end
 
-local main=Instance.new("Frame"); main.AnchorPoint=Vector2.new(.5,.5); main.Position=UDim2.fromScale(.5,.5); main.Size=UDim2.fromOffset(820,520); main.BackgroundColor3=C.bg; main.Parent=gui; corner(main,18); stroke(main,.2)
-local top=Instance.new("Frame"); top.Size=UDim2.new(1,0,0,72); top.BackgroundColor3=C.panel; top.Parent=main; corner(top,18)
-local title=label(top,"NAGI HUB",23); title.Position=UDim2.fromOffset(22,9); title.Size=UDim2.fromOffset(260,30); title.Font=Enum.Font.GothamBold
-local sub=label(top,"V3  •  TEAM ZYVORA  •  FEED YOUR PET",10,C.muted); sub.Position=UDim2.fromOffset(24,41); sub.Size=UDim2.fromOffset(400,18)
-local badge=label(top,"● READY",11,C.good); badge.AnchorPoint=Vector2.new(1,.5); badge.Position=UDim2.new(1,-62,.5,0); badge.Size=UDim2.fromOffset(100,20); badge.TextXAlignment=Enum.TextXAlignment.Right
-local close=Instance.new("TextButton"); close.AnchorPoint=Vector2.new(1,.5); close.Position=UDim2.new(1,-15,.5,0); close.Size=UDim2.fromOffset(36,36); close.Text="×"; close.TextSize=24; close.TextColor3=C.text; close.BackgroundColor3=C.card2; close.Parent=top; corner(close,9)
-
-local side=Instance.new("Frame"); side.Position=UDim2.fromOffset(12,84); side.Size=UDim2.fromOffset(165,420); side.BackgroundTransparency=1; side.Parent=main
-local content=Instance.new("Frame"); content.Position=UDim2.fromOffset(190,84); content.Size=UDim2.new(1,-202,1,-98); content.BackgroundTransparency=1; content.Parent=main
-
-local pages={}; local nav={}
-local function page(name)
-    local p=Instance.new("ScrollingFrame"); p.Name=name; p.Size=UDim2.fromScale(1,1); p.BackgroundTransparency=1; p.BorderSizePixel=0; p.ScrollBarThickness=3; p.Visible=false; p.Parent=content
-    local l=Instance.new("UIListLayout"); l.Padding=UDim.new(0,10); l.Parent=p
-    l:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() p.CanvasSize=UDim2.fromOffset(0,l.AbsoluteContentSize.Y+12) end)
-    pages[name]=p; return p
-end
-local function card(p,h)
-    local f=Instance.new("Frame"); f.Size=UDim2.new(1,-2,0,h or 72); f.BackgroundColor3=C.card; f.Parent=p; corner(f,12); stroke(f,.84); return f
-end
-local function navButton(name,icon)
-    local b=button(side,icon.."   "..name,function() selectTab(name) end,42); nav[name]=b; return b
+local function outline(o, transparency)
+    local s = Instance.new("UIStroke")
+    s.Color = C.accent
+    s.Thickness = 1
+    s.Transparency = transparency or 0.75
+    s.Parent = o
 end
 
-local home=page("Home"); local pet=page("Pet"); local playerPage=page("Player"); local session=page("Session"); local settings=page("Settings")
-
--- Home / game detection
-local hero=card(home,125)
-local h1=label(hero,"Feed Your Pet",23); h1.Position=UDim2.fromOffset(18,14); h1.Size=UDim2.new(1,-36,30,0); h1.Font=Enum.Font.GothamBold
-local h2=label(hero,"NagiHub V3 is connected to this experience.",13,C.muted); h2.Position=UDim2.fromOffset(18,50); h2.Size=UDim2.new(1,-36,22,0)
-local id=label(hero,"PLACE ID  "..tostring(game.PlaceId),11,C.good); id.Position=UDim2.fromOffset(18,84); id.Size=UDim2.new(1,-36,20,0)
-
-local mode=card(home,92)
-local mt=label(mode,"TARGET STATUS",11,C.muted); mt.Position=UDim2.fromOffset(18,12); mt.Size=UDim2.fromOffset(150,18)
-local mv=label(mode,"Checking...",17); mv.Position=UDim2.fromOffset(18,37); mv.Size=UDim2.new(1,-36,24,0)
-if game.PlaceId == TARGET_PLACE_ID then
-    mv.Text="✓ Feed Your Pet detected"; mv.TextColor3=C.good
-else
-    mv.Text="⚠ Different experience detected"; mv.TextColor3=C.warn
+local function label(parent, text, size, color)
+    local x = Instance.new("TextLabel")
+    x.BackgroundTransparency = 1
+    x.Text = text
+    x.TextColor3 = color or C.text
+    x.TextSize = size or 13
+    x.Font = Enum.Font.Gotham
+    x.TextXAlignment = Enum.TextXAlignment.Left
+    x.Parent = parent
+    return x
 end
 
-local function humanoid() local ch=player.Character; return ch and ch:FindFirstChildOfClass("Humanoid") end
-local function root() local ch=player.Character; return ch and ch:FindFirstChild("HumanoidRootPart") end
+local function notify(message)
+    local n = Instance.new("TextLabel")
+    n.AnchorPoint = Vector2.new(0.5, 0)
+    n.Position = UDim2.new(0.5, 0, 0, -48)
+    n.Size = UDim2.fromOffset(300, 38)
+    n.BackgroundColor3 = C.panel
+    n.TextColor3 = C.text
+    n.TextSize = 12
+    n.Font = Enum.Font.GothamMedium
+    n.Text = message
+    n.Parent = gui
+    round(n, 9)
+    outline(n, 0.45)
+    TweenService:Create(n, TweenInfo.new(0.2), {Position = UDim2.new(0.5, 0, 0, 18)}):Play()
+    task.delay(1.5, function()
+        if not n.Parent then return end
+        TweenService:Create(n, TweenInfo.new(0.18), {Position = UDim2.new(0.5, 0, 0, -48)}):Play()
+        task.wait(0.2)
+        if n.Parent then n:Destroy() end
+    end)
+end
 
--- Pet page: safe diagnostics/interaction helpers; it does not guess or mutate unknown pet systems.
-local pt=label(pet,"PET TOOLS",11,C.muted); pt.Size=UDim2.new(1,0,0,20); pt.Font=Enum.Font.GothamBold
-local info=card(pet,104)
-local it=label(info,"PET SYSTEM",12); it.Position=UDim2.fromOffset(16,12); it.Size=UDim2.new(1,-32,22,0); it.Font=Enum.Font.GothamBold
-local iv=label(info,"Waiting for your experience's pet objects...",11,C.muted); iv.Position=UDim2.fromOffset(16,39); iv.Size=UDim2.new(1,-32,42,0); iv.TextWrapped=true
-button(pet,"🔎  Scan local pet objects",function()
-    local found={}
-    for _,d in ipairs(player:GetDescendants()) do
-        if d:IsA("Folder") or d:IsA("Model") or d:IsA("Tool") then
-            local n=string.lower(d.Name)
-            if string.find(n,"pet",1,true) or string.find(n,"egg",1,true) or string.find(n,"food",1,true) then table.insert(found,d:GetFullName()) end
-        end
+-- Main floating window
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.Position = UDim2.fromScale(0.5, 0.5)
+main.Size = UDim2.fromOffset(330, 430)
+main.BackgroundColor3 = C.bg
+main.Parent = gui
+round(main, 14)
+outline(main, 0.3)
+
+local top = Instance.new("Frame")
+top.Size = UDim2.new(1, 0, 0, 58)
+top.BackgroundColor3 = C.panel
+top.Parent = main
+round(top, 14)
+
+local title = label(top, "⚡ NAGIHUB V3", 17, C.text)
+title.Position = UDim2.fromOffset(16, 7)
+title.Size = UDim2.fromOffset(210, 24)
+title.Font = Enum.Font.GothamBold
+
+local sub = label(top, "TEAM ZYVORA  •  CUSTOM", 9, C.muted)
+sub.Position = UDim2.fromOffset(18, 31)
+sub.Size = UDim2.fromOffset(210, 16)
+
+local close = Instance.new("TextButton")
+close.Size = UDim2.fromOffset(30, 30)
+close.Position = UDim2.new(1, -40, 0, 14)
+close.BackgroundColor3 = C.card
+close.Text = "×"
+close.TextColor3 = C.text
+close.TextSize = 20
+close.Font = Enum.Font.GothamBold
+close.Parent = top
+round(close, 8)
+
+local content = Instance.new("ScrollingFrame")
+content.Position = UDim2.fromOffset(12, 68)
+content.Size = UDim2.new(1, -24, 1, -80)
+content.BackgroundTransparency = 1
+content.BorderSizePixel = 0
+content.ScrollBarThickness = 3
+content.ScrollBarImageColor3 = C.accent
+content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+content.Parent = main
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 7)
+layout.Parent = content
+
+local padding = Instance.new("UIPadding")
+padding.PaddingBottom = UDim.new(0, 10)
+padding.Parent = content
+
+local section = label(content, "MAIN", 10, C.muted)
+section.Size = UDim2.new(1, 0, 0, 20)
+section.Font = Enum.Font.GothamBold
+
+local states = {}
+
+local function toggle(name, icon, callback)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 44)
+    row.BackgroundColor3 = C.card
+    row.Parent = content
+    round(row, 9)
+    outline(row, 0.86)
+
+    local text = label(row, icon .. "  " .. name, 12, C.text)
+    text.Position = UDim2.fromOffset(13, 0)
+    text.Size = UDim2.new(1, -90, 1, 0)
+    text.Font = Enum.Font.GothamMedium
+
+    local sw = Instance.new("TextButton")
+    sw.Size = UDim2.fromOffset(62, 28)
+    sw.Position = UDim2.new(1, -72, 0.5, -14)
+    sw.BackgroundColor3 = C.off
+    sw.Text = "OFF"
+    sw.TextColor3 = C.text
+    sw.TextSize = 10
+    sw.Font = Enum.Font.GothamBold
+    sw.AutoButtonColor = false
+    sw.Parent = row
+    round(sw, 7)
+
+    local state = false
+    states[name] = false
+
+    sw.MouseEnter:Connect(function()
+        sw.BackgroundColor3 = state and C.good or C.hover
+    end)
+    sw.MouseLeave:Connect(function()
+        sw.BackgroundColor3 = state and C.good or C.off
+    end)
+
+    sw.MouseButton1Click:Connect(function()
+        state = not state
+        states[name] = state
+        sw.Text = state and "ON" or "OFF"
+        sw.BackgroundColor3 = state and C.good or C.off
+        callback(state)
+    end)
+
+    return row
+end
+
+-- These callbacks are intentionally safe hooks. Put your own game logic inside them.
+toggle("SPEED", "⚡", function(on)
+    local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if h then h.WalkSpeed = on and 28 or 16 end
+    notify(on and "Speed ON" or "Speed OFF")
+end)
+
+toggle("AUTO FEED", "🍖", function(on)
+    notify(on and "Auto Feed enabled (hook ready)" or "Auto Feed disabled")
+end)
+
+toggle("AUTO CLICK", "🖱", function(on)
+    notify(on and "Auto Click enabled (hook ready)" or "Auto Click disabled")
+end)
+
+toggle("AUTO UPGRADE", "⬆", function(on)
+    notify(on and "Auto Upgrade enabled (hook ready)" or "Auto Upgrade disabled")
+end)
+
+toggle("AUTO EVENT", "🎯", function(on)
+    notify(on and "Auto Event enabled (hook ready)" or "Auto Event disabled")
+end)
+
+toggle("AUTO PET", "🐾", function(on)
+    notify(on and "Auto Pet enabled (hook ready)" or "Auto Pet disabled")
+end)
+
+local customTitle = label(content, "CUSTOM", 10, C.muted)
+customTitle.Size = UDim2.new(1, 0, 0, 20)
+customTitle.Font = Enum.Font.GothamBold
+
+local speedBox = Instance.new("Frame")
+speedBox.Size = UDim2.new(1, 0, 0, 48)
+speedBox.BackgroundColor3 = C.card
+speedBox.Parent = content
+round(speedBox, 9)
+outline(speedBox, 0.86)
+
+local speedText = label(speedBox, "Speed Value", 12, C.text)
+speedText.Position = UDim2.fromOffset(13, 0)
+speedText.Size = UDim2.fromOffset(120, 48)
+
+local input = Instance.new("TextBox")
+input.Size = UDim2.fromOffset(80, 30)
+input.Position = UDim2.new(1, -92, 0.5, -15)
+input.BackgroundColor3 = C.panel
+input.Text = "28"
+input.TextColor3 = C.text
+input.TextSize = 12
+input.Font = Enum.Font.GothamMedium
+input.ClearTextOnFocus = false
+input.Parent = speedBox
+round(input, 7)
+outline(input, 0.75)
+
+local customButton = Instance.new("TextButton")
+customButton.Size = UDim2.new(1, 0, 0, 42)
+customButton.BackgroundColor3 = C.card
+customButton.Text = "＋  CUSTOM ACTION"
+customButton.TextColor3 = C.text
+customButton.TextSize = 12
+customButton.Font = Enum.Font.GothamMedium
+customButton.AutoButtonColor = false
+customButton.Parent = content
+round(customButton, 9)
+outline(customButton, 0.82)
+customButton.MouseButton1Click:Connect(function()
+    notify("Custom action hook ready")
+end)
+
+local settingsTitle = label(content, "SETTINGS", 10, C.muted)
+settingsTitle.Size = UDim2.new(1, 0, 0, 20)
+settingsTitle.Font = Enum.Font.GothamBold
+
+local hide = Instance.new("TextButton")
+hide.Size = UDim2.new(1, 0, 0, 42)
+hide.BackgroundColor3 = C.card
+hide.Text = "⚙  HIDE NAGIHUB"
+hide.TextColor3 = C.text
+hide.TextSize = 12
+hide.Font = Enum.Font.GothamMedium
+hide.TextXAlignment = Enum.TextXAlignment.Left
+hide.Parent = content
+round(hide, 9)
+outline(hide, 0.82)
+
+local reopen = Instance.new("TextButton")
+reopen.Size = UDim2.fromOffset(125, 38)
+reopen.Position = UDim2.fromOffset(18, 110)
+reopen.BackgroundColor3 = C.panel
+reopen.Text = "⚡ NAGIHUB"
+reopen.TextColor3 = C.accent
+reopen.TextSize = 12
+reopen.Font = Enum.Font.GothamBold
+reopen.Visible = false
+reopen.Parent = gui
+round(reopen, 9)
+outline(reopen, 0.35)
+
+local function hideHub()
+    main.Visible = false
+    reopen.Visible = true
+end
+
+hide.MouseButton1Click:Connect(hideHub)
+close.MouseButton1Click:Connect(hideHub)
+reopen.MouseButton1Click:Connect(function()
+    main.Visible = true
+    reopen.Visible = false
+end)
+
+-- Drag window from top bar
+local dragging = false
+local dragStart
+local startPos
+
+top.InputBegan:Connect(function(inputObject)
+    if inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = inputObject.Position
+        startPos = main.Position
     end
-    print("NagiHub V3 pet scan:",#found,"matching local objects")
-    for i=1,math.min(#found,50) do print(found[i]) end
-    iv.Text=(#found>0 and ("Found "..#found.." matching local objects. See Output for details.") or "No matching local pet/egg/food objects found locally.")
-    notify("Pet scan complete: "..#found)
-end)
-button(pet,"📋  Print character objects",function()
-    for _,d in ipairs(player.Character and player.Character:GetDescendants() or {}) do print("NagiHub Character:",d:GetFullName(),d.ClassName) end
-    notify("Character objects printed to Output")
 end)
 
--- Player page
-local speed=16; local jump=50; local sprint=false
-local function slider(p,name,min,max,default,cb)
-    local f=card(p,84); local txt=label(f,name..": "..default,13); txt.Position=UDim2.fromOffset(15,9); txt.Size=UDim2.new(1,-30,22,0)
-    local bar=Instance.new("Frame"); bar.Position=UDim2.fromOffset(15,48); bar.Size=UDim2.new(1,-30,0,7); bar.BackgroundColor3=Color3.fromRGB(38,45,62); bar.Parent=f; corner(bar,4)
-    local fill=Instance.new("Frame"); fill.BackgroundColor3=C.accent; fill.Size=UDim2.new((default-min)/(max-min),0,1,0); fill.Parent=bar; corner(fill,4)
-    local drag=false
-    local function set(x) local q=math.clamp((x-bar.AbsolutePosition.X)/bar.AbsoluteSize.X,0,1); local v=math.floor(min+(max-min)*q+.5); fill.Size=UDim2.new(q,0,1,0); txt.Text=name..": "..v; cb(v) end
-    bar.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=true; set(i.Position.X) end end)
-    UIS.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end end)
-    UIS.InputChanged:Connect(function(i) if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then set(i.Position.X) end end)
-end
-local ptitle=label(playerPage,"MOVEMENT",11,C.muted); ptitle.Size=UDim2.new(1,0,0,20); ptitle.Font=Enum.Font.GothamBold
-slider(playerPage,"WalkSpeed",8,100,16,function(v) speed=v; local h=humanoid(); if h then h.WalkSpeed=v end end)
-slider(playerPage,"JumpPower",25,150,50,function(v) jump=v; local h=humanoid(); if h then h.UseJumpPower=true; h.JumpPower=v end end)
-button(playerPage,"⚡  Toggle sprint",function() sprint=not sprint; local h=humanoid(); if h then h.WalkSpeed=sprint and math.max(speed,28) or speed end; notify(sprint and "Sprint ON" or "Sprint OFF") end)
-button(playerPage,"↺  Reset movement",function() speed=16; jump=50; sprint=false; local h=humanoid(); if h then h.WalkSpeed=16; h.UseJumpPower=true; h.JumpPower=50 end; notify("Movement reset") end)
-button(playerPage,"♻  Respawn character",function() local h=humanoid(); if h then h.Health=0 end end)
-
--- Session dashboard
-local stitle=label(session,"SESSION DASHBOARD",11,C.muted); stitle.Size=UDim2.new(1,0,0,20); stitle.Font=Enum.Font.GothamBold
-local s1=card(session,94)
-local sv=label(s1,"PLAYERS",11,C.muted); sv.Position=UDim2.fromOffset(16,12); sv.Size=UDim2.fromOffset(120,18)
-local sn=label(s1,"",20); sn.Position=UDim2.fromOffset(16,35); sn.Size=UDim2.fromOffset(120,28); sn.Font=Enum.Font.GothamBold
-local fps=label(s1,"FPS --",12,C.muted); fps.Position=UDim2.new(1,-160,0,35); fps.Size=UDim2.fromOffset(140,24); fps.TextXAlignment=Enum.TextXAlignment.Right
-local ping=label(s1,"PING --",12,C.muted); ping.Position=UDim2.new(1,-160,0,58); ping.Size=UDim2.fromOffset(140,20); ping.TextXAlignment=Enum.TextXAlignment.Right
-local function updateSession()
-    sn.Text=tostring(#Players:GetPlayers())
-    local ok, v = pcall(function() return Stats.Network.ServerStatsItem["Data Ping"]:GetValue() end)
-    ping.Text=ok and ("PING "..math.floor(v).." ms") or "PING --"
-end
-updateSession(); Players.PlayerAdded:Connect(updateSession); Players.PlayerRemoving:Connect(updateSession)
-
-local listCard=card(session,250)
-local list=Instance.new("ScrollingFrame"); list.Position=UDim2.fromOffset(12,12); list.Size=UDim2.new(1,-24,1,-24); list.BackgroundTransparency=1; list.BorderSizePixel=0; list.ScrollBarThickness=2; list.Parent=listCard
-local ll=Instance.new("UIListLayout"); ll.Padding=UDim.new(0,6); ll.Parent=list
-local function refreshPlayers()
-    for _,x in ipairs(list:GetChildren()) do if x:IsA("TextButton") then x:Destroy() end end
-    for _,other in ipairs(Players:GetPlayers()) do
-        button(list,"  "..other.DisplayName.."  ("..other.Name..")",function()
-            local r=other.Character and other.Character:FindFirstChild("HumanoidRootPart")
-            local me=root()
-            if r and me then me.CFrame=r.CFrame+Vector3.new(3,0,0); notify("Moved near "..other.DisplayName) end
-        end,34)
+top.InputEnded:Connect(function(inputObject)
+    if inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
     end
-end
-refreshPlayers(); Players.PlayerAdded:Connect(refreshPlayers); Players.PlayerRemoving:Connect(refreshPlayers)
-
--- Settings
-local q=label(settings,"INTERFACE",11,C.muted); q.Size=UDim2.new(1,0,0,20); q.Font=Enum.Font.GothamBold
-button(settings,"👁  Hide NagiHub",function() main.Visible=false; reopen.Visible=true end)
-button(settings,"🎯  Reset window position",function() main.Position=UDim2.fromScale(.5,.5); notify("Position reset") end)
-button(settings,"▣  Compact mode",function() main.Size=UDim2.fromOffset(680,450); notify("Compact mode") end)
-button(settings,"▣  Full mode",function() main.Size=UDim2.fromOffset(820,520); notify("Full mode") end)
-button(settings,"🔔  Test notification",function() notify("NagiHub V3 is working",C.good) end)
-button(settings,"📌  Print game information",function() print("NagiHub V3 | Game:",game.Name,"PlaceId:",game.PlaceId,"JobId:",game.JobId); notify("Game info printed to Output") end)
-
-navButton("Home","◆"); navButton("Pet","◇"); navButton("Player","◈"); navButton("Session","▣"); navButton("Settings","⚙")
-function selectTab(name)
-    for n,p in pairs(pages) do p.Visible=(n==name) end
-    for n,bx in pairs(nav) do bx.BackgroundColor3=(n==name) and Color3.fromRGB(40,52,82) or C.card end
-end
-selectTab("Home")
-
--- Drag window
-local dragging=false; local dragStart; local startPos
-top.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then dragging=true; dragStart=i.Position; startPos=main.Position end end)
-UIS.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then dragging=false end end)
-UIS.InputChanged:Connect(function(i) if dragging and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local d=i.Position-dragStart; main.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+d.X,startPos.Y.Scale,startPos.Y.Offset+d.Y) end end)
-
-local reopen=Instance.new("TextButton"); reopen.AnchorPoint=Vector2.new(0,1); reopen.Position=UDim2.new(0,18,1,-18); reopen.Size=UDim2.fromOffset(118,38); reopen.BackgroundColor3=C.panel; reopen.Text="NAGI HUB"; reopen.TextColor3=C.text; reopen.TextSize=13; reopen.Font=Enum.Font.GothamBold; reopen.Visible=false; reopen.Parent=gui; corner(reopen,10); stroke(reopen,.4)
-close.MouseButton1Click:Connect(function() main.Visible=false; reopen.Visible=true end)
-reopen.MouseButton1Click:Connect(function() main.Visible=true; reopen.Visible=false end)
-
-local frames=0; local elapsed=0
-RunService.RenderStepped:Connect(function(dt)
-    frames += 1; elapsed += dt
-    if elapsed >= .5 then fps.Text=string.format("FPS %.0f",frames/elapsed); frames=0; elapsed=0; updateSession() end
 end)
 
-if game.PlaceId == TARGET_PLACE_ID then
-    notify("NagiHub V3 • Feed Your Pet ready",C.good)
-else
-    notify("NagiHub V3 loaded • different PlaceId",C.warn)
-end
+UserInputService.InputChanged:Connect(function(inputObject)
+    if not dragging then return end
+    if inputObject.UserInputType ~= Enum.UserInputType.MouseMovement and inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
+    local delta = inputObject.Position - dragStart
+    main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end)
+
+-- Keep Speed Value usable for the player's own experience.
+input.FocusLost:Connect(function()
+    local value = tonumber(input.Text)
+    if not value then
+        input.Text = "28"
+        notify("Invalid speed value")
+        return
+    end
+    input.Text = tostring(math.clamp(math.floor(value), 8, 100))
+end)
+
+-- FPS display in title while running.
+local fpsFrames = 0
+local fpsClock = os.clock()
+RunService.RenderStepped:Connect(function()
+    fpsFrames += 1
+    if os.clock() - fpsClock >= 1 then
+        sub.Text = string.format("TEAM ZYVORA  •  FPS %d", fpsFrames)
+        fpsFrames = 0
+        fpsClock = os.clock()
+    end
+end)
+
+notify("NagiHub V3 loaded")
+print("NagiHub V3 loaded | PlaceId:", game.PlaceId)
