@@ -2,7 +2,8 @@
 -- Compact floating UI for Roblox Studio
 -- Target: Feed Your Pet (PlaceId 131783066284968)
 -- Place in StarterPlayer > StarterPlayerScripts
--- Automation toggles are UI hooks only; connect them to your own experience logic.
+-- AUTO CLICK uses a BindableEvent named NagiHubFeedPets.
+-- Your own Feed Your Pets script should listen to that event and run its normal feed action.
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -14,6 +15,14 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local old = playerGui:FindFirstChild("NagiHubV3")
 if old then old:Destroy() end
+
+-- Shared local integration event for the user's own experience.
+local feedEvent = playerGui:FindFirstChild("NagiHubFeedPets")
+if not feedEvent then
+    feedEvent = Instance.new("BindableEvent")
+    feedEvent.Name = "NagiHubFeedPets"
+    feedEvent.Parent = playerGui
+end
 
 local C = {
     bg = Color3.fromRGB(8, 10, 16),
@@ -82,7 +91,6 @@ local function notify(message)
     end)
 end
 
--- Main floating window
 local main = Instance.new("Frame")
 main.Name = "Main"
 main.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -189,7 +197,6 @@ local function toggle(name, icon, callback)
     return row
 end
 
--- These callbacks are intentionally safe hooks. Put your own game logic inside them.
 toggle("SPEED", "⚡", function(on)
     local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
     if h then h.WalkSpeed = on and 28 or 16 end
@@ -197,11 +204,39 @@ toggle("SPEED", "⚡", function(on)
 end)
 
 toggle("AUTO FEED", "🍖", function(on)
-    notify(on and "Auto Feed enabled (hook ready)" or "Auto Feed disabled")
+    notify(on and "Auto Feed enabled" or "Auto Feed disabled")
 end)
 
+-- AUTO CLICK: repeatedly asks the user's own Feed Pets script to perform its normal action.
+local autoClick = false
+local autoClickThread = nil
+local CLICK_INTERVAL = 0.2
+
+local function setAutoClick(enabled)
+    autoClick = enabled
+
+    if not enabled then
+        return
+    end
+
+    if autoClickThread then
+        return
+    end
+
+    autoClickThread = task.spawn(function()
+        while autoClick do
+            if feedEvent and feedEvent.Parent then
+                feedEvent:Fire()
+            end
+            task.wait(CLICK_INTERVAL)
+        end
+        autoClickThread = nil
+    end)
+end
+
 toggle("AUTO CLICK", "🖱", function(on)
-    notify(on and "Auto Click enabled (hook ready)" or "Auto Click disabled")
+    setAutoClick(on)
+    notify(on and "Auto Click ON • 5 clicks/sec" or "Auto Click OFF")
 end)
 
 toggle("AUTO UPGRADE", "⬆", function(on)
@@ -300,7 +335,6 @@ reopen.MouseButton1Click:Connect(function()
     reopen.Visible = false
 end)
 
--- Drag window from top bar
 local dragging = false
 local dragStart
 local startPos
@@ -326,7 +360,6 @@ UserInputService.InputChanged:Connect(function(inputObject)
     main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end)
 
--- Keep Speed Value usable for the player's own experience.
 input.FocusLost:Connect(function()
     local value = tonumber(input.Text)
     if not value then
@@ -337,7 +370,6 @@ input.FocusLost:Connect(function()
     input.Text = tostring(math.clamp(math.floor(value), 8, 100))
 end)
 
--- FPS display in title while running.
 local fpsFrames = 0
 local fpsClock = os.clock()
 RunService.RenderStepped:Connect(function()
